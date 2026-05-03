@@ -1,13 +1,7 @@
 const WIKIPEDIA_API = 'https://ar.wikipedia.org/api/rest_v1/page/random/summary';
 const FAVORITES_KEY = 'rabbit_hole_favorites';
 
-const INTERESTING_KEYWORDS = [
-  'لغز', 'مؤامرة', 'حادثة', 'ظاهرة', 'جريمة', 'اكتشاف',
-  'غريب', 'مجهول', 'كارثة', 'أسطورة', 'خرافة', 'سر',
-  'سفاح', 'تجربة', 'مرعب', 'مخيف', 'نظرية', 'فضاء',
-  'اختفاء', 'شبح', 'كائن',
-];
-
+// اكتفينا بالقائمة السوداء فقط لتسريع البحث بشكل صاروخي
 const STRICT_BLACKLIST = [
   'مواليد', 'لاعب', 'سياسي', 'ممثل', 'كاهن', 'أسقف',
   'نادي', 'قرية', 'عزبة', 'بطولة', 'موسم', 'ألبوم',
@@ -18,11 +12,6 @@ const STRICT_BLACKLIST = [
 function isBlacklisted(data) {
   const haystack = `${data.description || ''} ${data.extract || ''}`;
   return STRICT_BLACKLIST.some(kw => haystack.includes(kw));
-}
-
-function isInteresting(data) {
-  const haystack = `${data.description || ''} ${data.extract || ''}`;
-  return INTERESTING_KEYWORDS.some(kw => haystack.includes(kw));
 }
 
 // ─── DOM refs ──────────────────────────────────
@@ -52,14 +41,13 @@ const toggleChevron = document.getElementById('toggle-chevron');
 // ─── State ──────────────────────────────────
 
 let currentArticle  = null;
-let prefetchPromise = null; // always holds the next article being fetched
+let prefetchPromise = null; 
 let sessionStreak   = 0;
 
 function updateStreak() {
   sessionStreak++;
   streakCountEl.textContent = toArabicNumerals(sessionStreak);
 
-  // Tier colours: default → milestone (5+) → on-fire (20+)
   streakBadge.classList.remove('milestone', 'on-fire');
   if (sessionStreak >= 20) {
     streakBadge.classList.add('on-fire');
@@ -67,10 +55,9 @@ function updateStreak() {
     streakBadge.classList.add('milestone');
   }
 
-  // Show on first article, pop on every update
   streakBadge.classList.remove('hidden');
   streakBadge.classList.remove('pop');
-  void streakBadge.offsetWidth; // force reflow so animation restarts
+  void streakBadge.offsetWidth; 
   streakBadge.classList.add('pop');
 }
 
@@ -91,19 +78,15 @@ function updateTimer() {
 
 setInterval(updateTimer, 1000);
 
-// ─── Core filter fetch — returns a good article or null ──────────────────────────────────
-
-const sleep = ms => new Promise(res => setTimeout(res, ms));
+// ─── Core filter fetch — (تم تسريعه) ──────────────────────────────────
 
 async function fetchFiltered() {
-  const MAX_ATTEMPTS = 20;
+  const MAX_ATTEMPTS = 5; // قللنا عدد المحاولات لتجنب التعليق
   let attempts = 0;
-  let lastClean = null;
 
   while (attempts < MAX_ATTEMPTS) {
     attempts++;
-    if (attempts > 1) await sleep(300);
-
+    
     let candidate;
     try {
       const response = await fetch(WIKIPEDIA_API, { headers: { Accept: 'application/json' } });
@@ -113,16 +96,26 @@ async function fetchFiltered() {
       continue;
     }
 
-    if (isBlacklisted(candidate)) continue;
-    if (isInteresting(candidate)) return candidate;
+    // تجاهل المقالات الفارغة جداً
+    if (!candidate.extract || candidate.extract.length < 50) continue;
 
-    lastClean = candidate;
+    // استبعاد المقالات المملة
+    if (isBlacklisted(candidate)) continue;
+
+    // بمجرد أن نجد مقالة صالحة، نرجعها فوراً دون تأخير
+    return candidate; 
   }
 
-  return lastClean; // fallback: best clean article found, or null
+  // في حال فشل الفلترة، جلب أي مقالة لضمان عدم توقف الموقع
+  try {
+    const fallbackResponse = await fetch(WIKIPEDIA_API);
+    return await fallbackResponse.json();
+  } catch {
+    return null;
+  }
 }
 
-// ─── Show next article (uses pre-fetched result) ──────────────────────────────────
+// ─── Show next article ──────────────────────────────────
 
 async function showNextArticle() {
   showLoading();
@@ -146,7 +139,7 @@ async function showNextArticle() {
     fetchBtnLabel.textContent = 'أعطني حفرة أعمق!';
   }
 
-  // Immediately start fetching the next one in the background
+  // بدأ التحميل المسبق للمقالة القادمة فوراً في الخلفية
   prefetchPromise = fetchFiltered();
 }
 
@@ -163,7 +156,6 @@ function renderArticle(data) {
       || `https://ar.wikipedia.org/wiki/${encodeURIComponent(data.titles?.canonical || data.title || '')}`,
   };
 
-  // Save button state
   const favs = loadFavorites();
   const alreadySaved = favs.some(f => f.url === currentArticle.url);
   if (alreadySaved) {
@@ -188,10 +180,9 @@ function renderArticle(data) {
   loadingEl.classList.add('hidden');
   errorEl.classList.add('hidden');
 
-  // Trigger fade-in by resetting the animation class
   articleEl.classList.remove('fade-in');
   articleEl.classList.add('hidden');
-  void articleEl.offsetWidth; // force reflow
+  void articleEl.offsetWidth; 
   articleEl.classList.remove('hidden');
   articleEl.classList.add('fade-in');
 }
@@ -209,7 +200,7 @@ function showError() {
   errorEl.classList.remove('hidden');
 }
 
-// ─── Share Button (navigator.share → clipboard fallback) ──────────────────────────────────
+// ─── Share Button ──────────────────────────────────
 
 shareBtn.addEventListener('click', async () => {
   if (!currentArticle) return;
@@ -223,13 +214,12 @@ shareBtn.addEventListener('click', async () => {
         text: shareText,
         url: currentArticle.url,
       });
-      return; // native share sheet handled it — no extra feedback needed
+      return; 
     } catch (err) {
-      if (err.name === 'AbortError') return; // user cancelled — do nothing
+      if (err.name === 'AbortError') return; 
     }
   }
 
-  // Clipboard fallback
   try {
     await navigator.clipboard.writeText(currentArticle.url);
   } catch {
@@ -348,6 +338,6 @@ favToggle.addEventListener('click', () => favOpen ? closeFavorites() : openFavor
 fetchBtn.addEventListener('click', showNextArticle);
 renderFavorites();
 
-// Kick off first fetch, then immediately show it (and queue the second)
+// Kick off first fetch
 prefetchPromise = fetchFiltered();
 showNextArticle();
