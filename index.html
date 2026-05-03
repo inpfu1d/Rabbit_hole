@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no" />
+    <title>زر حفرة الأرنب</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+
+    <!-- Fixed timer — always visible, never blocks content -->
+    <div id="timer">
+      <span id="timer-icon">🕳️</span>
+      <span id="timer-text">الوقت المهدر: ٠٠:٠٠</span>
+    </div>
+
+    <!-- Full-height app shell: header + scroll + bottom bar -->
+    <div class="app-shell">
+
+      <header>
+        <span class="logo">🐇</span>
+        <div class="header-text">
+          <h1>حفرة الأرنب</h1>
+          <p class="subtitle">اسقط في متاهة المعرفة</p>
+        </div>
+        <div id="streak-badge" class="streak-badge hidden" aria-label="عدد المقالات المقروءة">
+          <span class="streak-fire">🔥</span>
+          <span id="streak-count">١</span>
+        </div>
+      </header>
+
+      <!-- Scrollable content area -->
+      <div class="scroll-area">
+
+        <!-- Loading -->
+        <div id="loading" class="loading-state">
+          <div class="spinner"></div>
+          <p>جارٍ الجلب من أعماق ويكيبيديا…</p>
+        </div>
+
+        <!-- Article -->
+        <article id="article" class="article hidden">
+          <img id="article-image" class="article-image hidden" alt="" />
+          <div class="article-body">
+            <div class="title-row">
+              <h2 id="article-title"></h2>
+              <button id="save-btn" class="save-button" title="حفظ في المفضلة">
+                <span class="save-icon">🔖</span>
+                <span class="save-label">حفظ</span>
+              </button>
+            </div>
+            <p id="article-description" class="article-description"></p>
+            <p id="article-extract"></p>
+          </div>
+        </article>
+
+        <!-- Error -->
+        <div id="error" class="error-state hidden">
+          <div class="error-icon">⚠️</div>
+          <p>حدث خطأ في جلب المقالة، حاول مرة أخرى</p>
+        </div>
+
+        <!-- Favorites -->
+        <section id="favorites-section" class="favorites-section">
+          <button class="favorites-toggle" id="favorites-toggle">
+            <span>⭐ مفضلتي</span>
+            <span id="fav-count-badge" class="fav-badge hidden">0</span>
+            <span class="toggle-chevron" id="toggle-chevron">▾</span>
+          </button>
+          <div id="favorites-body" class="favorites-body hidden">
+            <ul id="favorites-list" class="favorites-list"></ul>
+            <p id="favorites-empty" class="favorites-empty hidden">لا توجد مقالات محفوظة بعد.</p>
+          </div>
+        </section>
+
+      </div><!-- end .scroll-area -->
+
+      <!-- Sticky bottom action bar -->
+      <div class="bottom-bar">
+        <button id="share-btn" class="share-button">
+          <span class="share-icon">🔗</span>
+          <span id="share-label">شارك هذه الحفرة</span>
+        </button>
+        <button id="fetch-btn" class="fetch-button">
+          <span class="btn-rabbit">🐇</span>
+          <span>أعطني حفرة أعمق!</span>
+          <span class="btn-arrow">↓</span>
+        </button>
+      </div>
+
+    </div><!-- end .app-shell -->
+
+    <script type="module" src="/src/script.js"></script>
+  </body>
+</html>
